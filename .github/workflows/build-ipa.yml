@@ -14,6 +14,16 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Select Latest Xcode
+        run: |
+          for xc in /Applications/Xcode_16*.app /Applications/Xcode_15*.app; do
+            if [ -d "$xc" ]; then
+              sudo xcode-select -s "$xc/Contents/Developer"
+              break
+            fi
+          done
+          xcodebuild -version
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
