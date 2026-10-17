@@ -20,6 +20,7 @@ jobs:
 
       - name: Build App with Xcode
         run: |
+          set +e
           xcodebuild clean build \
             -project NotificationApp.xcodeproj \
             -target NotificationApp \
@@ -30,7 +31,14 @@ jobs:
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            AD_HOC_CODE_SIGNING_ALLOWED=YES > build.log 2>&1
+          BUILD_STATUS=$?
+          echo "=== XCODEBUILD EXIT CODE: $BUILD_STATUS ==="
+          if [ $BUILD_STATUS -ne 0 ]; then
+            echo "=== BUILD ERRORS FOUND ==="
+            grep -E "error:|fatal error:|BUILD FAILED" build.log -B 2 -A 5 || tail -n 80 build.log
+            exit 1
+          fi
 
       - name: Package Payload to IPA
         run: |
