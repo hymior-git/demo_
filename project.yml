@@ -1,6 +1,8 @@
 name: NotificationApp
 options:
   bundleIdPrefix: com.investing
+  deploymentTarget:
+    iOS: "16.0"
 targets:
   NotificationApp:
     type: application
@@ -8,9 +10,13 @@ targets:
     deploymentTarget: "16.0"
     sources:
       - path: ios_native_project
+        excludes:
+          - "Info.plist"
     info:
       path: ios_native_project/Info.plist
     settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.investing.customnotifications
       CODE_SIGNING_ALLOWED: NO
+      CODE_SIGNING_REQUIRED: NO
       CODE_SIGN_IDENTITY: ""
-      DEVELOPMENT_TEAM: ""
+      ENABLE_BITCODE: NO

@@ -18,22 +18,23 @@ jobs:
       - name: Generate Xcode Project
         run: xcodegen generate
 
-      - name: Build Xcode Archive
+      - name: Build App with Xcode
         run: |
-          xcodebuild archive \
+          xcodebuild clean build \
             -project NotificationApp.xcodeproj \
             -scheme NotificationApp \
             -configuration Release \
-            -archivePath build/NotificationApp.xcarchive \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            BUILD_DIR=./build
 
       - name: Package Payload to IPA
         run: |
           mkdir -p Payload
-          cp -r build/NotificationApp.xcarchive/Products/Applications/NotificationApp.app Payload/
+          cp -r build/Release-iphoneos/NotificationApp.app Payload/
           zip -r NotificationApp.ipa Payload
           rm -rf Payload
 
