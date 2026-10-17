@@ -1,0 +1,44 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Build Xcode Archive
+        run: |
+          xcodebuild archive \
+            -project NotificationApp.xcodeproj \
+            -scheme NotificationApp \
+            -configuration Release \
+            -archivePath build/NotificationApp.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Package Payload to IPA
+        run: |
+          mkdir -p Payload
+          cp -r build/NotificationApp.xcarchive/Products/Applications/NotificationApp.app Payload/
+          zip -r NotificationApp.ipa Payload
+          rm -rf Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NotificationApp-iOS-IPA
+          path: NotificationApp.ipa

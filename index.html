@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Thông Báo iOS - Investing.com</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Investing">
+  <link rel="apple-touch-icon" href="investing_icon.jpg">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #05070c;
+      color: #ffffff;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+    }
+
+    /* Background Earth curve with blue atmospheric glow (matches user screenshot) */
+    .bg-atmosphere {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: radial-gradient(circle at 50% 120%, rgba(20, 80, 160, 0.45) 0%, rgba(8, 25, 60, 0.6) 35%, #05070c 75%);
+      pointer-events: none;
+    }
+
+    .bg-earth-glow {
+      position: fixed;
+      bottom: -40vh;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140vw;
+      height: 60vh;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(64, 150, 255, 0.28) 0%, rgba(15, 60, 140, 0.15) 50%, transparent 80%);
+      filter: blur(40px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-stars {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+        radial-gradient(1.5px 1.5px at 140px 170px, rgba(255,255,255,0.8), rgba(0,0,0,0)),
+        radial-gradient(1px 1px at 280px 90px, rgba(255,255,255,0.6), rgba(0,0,0,0)),
+        radial-gradient(1.2px 1.2px at 400px 320px, #ffffff, rgba(0,0,0,0));
+      background-size: 500px 500px;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Container */
+    .app-wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 16px 40px;
+    }
+
+    /* Header Nav */
+    .nav-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 6px;
+      margin-bottom: 20px;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-ios {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-weight: 500;
+    }
+
+    /* iPhone Frame Simulator */
+    .iphone-frame {
+      width: 100%;
+      border-radius: 46px;
+      background: rgba(15, 17, 23, 0.7);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      padding: 16px 14px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    /* Dynamic Island */
+    .dynamic-island {
+      width: 110px;
+      height: 30px;
+      background: #000;
+      border-radius: 20px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .sensor-dot {
+      width: 10px;
+      height: 10px;
+      background: #0c0d13;
+      border-radius: 50%;
+    }
+
+    .camera-lens {
+      width: 11px;
+      height: 11px;
+      background: radial-gradient(circle at 35% 35%, #182245 0%, #000 80%);
+      border-radius: 50%;
+    }
+
+    /* Lock Screen Clock */
+    .lock-time {
+      font-size: 64px;
+      font-weight: 600;
+      letter-spacing: -2px;
+      color: rgba(255, 255, 255, 0.95);
+      line-height: 1;
+      margin-bottom: 6px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+
+    .lock-date {
+      font-size: 15px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 28px;
+      letter-spacing: -0.2px;
+    }
+
+    /* === NOTIFICATION BANNER (Pixel-perfect replica of user image) === */
+    .notification-wrapper {
+      width: 100%;
+      margin-bottom: 20px;
+      perspective: 1000px;
+    }
+
+    .ios-notification {
+      width: 100%;
+      background: rgba(28, 28, 30, 0.82);
+      backdrop-filter: blur(35px) saturate(190%);
+      -webkit-backdrop-filter: blur(35px) saturate(190%);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.45),
+        0 1px 3px rgba(0, 0, 0, 0.3),
+        inset 0 0.5px 0.5px rgba(255, 255, 255, 0.25);
+      padding: 13px 15px;
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, opacity 0.2s ease;
+      position: relative;
+    }
+
+    .ios-notification:active {
+      transform: scale(0.97);
+    }
+
+    .notification-animate-in {
+      animation: iosSlideDown 0.55s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    }
+
+    @keyframes iosSlideDown {
+      0% {
+        opacity: 0;
+        transform: translateY(-40px) scale(0.92);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* App Icon & Badge */
+    .icon-container {
+      position: relative;
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+    }
+
+    .app-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      display: block;
+      background: #111;
+    }
+
+    /* Notification Count Badge on Icon (from user screenshot) */
+    .icon-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 4px;
+      border-radius: 10px;
+      background: rgba(45, 45, 48, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #ffffff;
+      font-size: 11.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Notification Content */
+    .notif-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .notif-app-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.25px;
+    }
+
+    .notif-time {
+      font-size: 13px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.52);
+      letter-spacing: -0.1px;
+    }
+
+    .notif-body {
+      font-size: 14.2px;
+      font-weight: 400;
+      line-height: 1.35;
+      color: rgba(255, 255, 255, 0.94);
+      letter-spacing: -0.2px;
+      word-break: break-word;
+    }
+
+    /* Lock Screen Quick Actions (Torch & Camera) */
+    .lock-actions {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 16px 0;
+      margin-top: auto;
+    }
+
+    .action-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(30, 30, 35, 0.65);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .action-circle:active {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .home-bar {
+      width: 134px;
+      height: 4px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.6);
+      margin-top: 24px;
+    }
+
+    /* === CONTROLS & DASHBOARD === */
+    .controls-card {
+      width: 100%;
+      background: rgba(20, 22, 28, 0.85);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-radius: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      color: #fff;
+      padding: 10px 14px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      border-color: #ff9500;
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 65px;
+      line-height: 1.4;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* Action Buttons */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff9500 0%, #ff5e00 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(255, 149, 0, 0.35);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+      filter: brightness(0.9);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-secondary:active {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .btn-accent {
+      background: #007aff;
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(0, 122, 255, 0.35);
+    }
+
+    /* Notification Sound Synthesizer */
+    .audio-badge {
+      font-size: 11px;
+      color: #ff9500;
+      margin-left: auto;
+    }
+
+    /* Modal Instructions */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 440px;
+      background: #1c1c1e;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 22px;
+      padding: 24px;
+      color: #fff;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      background: #007aff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .close-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,0.12);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Notification toast for success */
+    .toast {
+      position: fixed;
+      top: 20px;
+      background: rgba(30, 30, 35, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 200;
+      transform: translateY(-80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Atmospheric Background -->
+  <div class="bg-atmosphere"></div>
+  <div class="bg-earth-glow"></div>
+  <div class="bg-stars"></div>
+
+  <!-- Toast Message -->
+  <div id="toast" class="toast">Đã phát thông báo có chuông! 🔔</div>
+
+  <div class="app-wrapper">
+    <!-- Navigation / Header -->
+    <header class="nav-bar">
+      <div class="brand-title">
+        <span>🍎 iOS Notification Simulator</span>
+        <span class="badge-ios">iOS 18</span>
+      </div>
+      <span class="audio-badge">🔊 Âm thanh Bật</span>
+    </header>
+
+    <!-- iPhone Screen Simulator -->
+    <div class="iphone-frame" id="iphoneFrame">
+      <!-- Dynamic Island -->
+      <div class="dynamic-island">
+        <div class="sensor-dot"></div>
+        <div class="camera-lens"></div>
+      </div>
+
+      <!-- Time & Date -->
+      <div class="lock-time" id="screenClock">09:00</div>
+      <div class="lock-date" id="screenDate">Thứ Bảy, 17 tháng 10</div>
+
+      <!-- NOTIFICATION BANNER (Exact Match to User Image) -->
+      <div class="notification-wrapper">
+        <div class="ios-notification" id="bannerCard" onclick="triggerNotificationEffect()">
+          <!-- App Icon + Badge -->
+          <div class="icon-container">
+            <img src="investing_icon.jpg" alt="Investing.com" class="app-icon" id="previewIcon">
+            <div class="icon-badge" id="previewBadge">3</div>
+          </div>
+
+          <!-- Text Information -->
+          <div class="notif-content">
+            <div class="notif-header">
+              <span class="notif-app-name" id="previewAppName">Investing.com</span>
+              <span class="notif-time" id="previewTime">09:00</span>
+            </div>
+            <div class="notif-body" id="previewBody">
+              +105%, +77%, +31%: Cổ phiếu "kinh tế thực" bứt phá khi kết quả Q3 mở rộng đà tăng thị trường
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lock Screen Actions -->
+      <div class="lock-actions">
+        <div class="action-circle" title="Đèn pin">🔦</div>
+        <div class="action-circle" title="Máy ảnh">📷</div>
+      </div>
+
+      <!-- iOS Home Bar Indicator -->
+      <div class="home-bar"></div>
+    </div>
+
+    <!-- Live Customizer & Action Controls -->
+    <div class="controls-card">
+      <div class="section-title">
+        <span>⚙️ Tùy Chỉnh Nội Dung Thông Báo</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Tên Ứng Dụng</label>
+          <input type="text" id="inputAppName" class="form-input" value="Investing.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Thời Gian Thông Báo</label>
+          <input type="text" id="inputTime" class="form-input" value="09:00">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Số Thông Báo (Badge)</label>
+          <input type="number" id="inputBadge" class="form-input" value="3" min="1" max="99">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Đổi Icon (Tải ảnh từ máy)</label>
+          <input type="file" id="inputIconFile" class="form-input" accept="image/*" style="padding: 7px 10px;">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nội Dung Thông Báo</label>
+        <textarea id="inputBody" class="form-textarea">+105%, +77%, +31%: Cổ phiếu "kinh tế thực" bứt phá khi kết quả Q3 mở rộng đà tăng thị trường</textarea>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="playNotificationAnimation()">
+          <span>🔔 Phát Lại Thông Báo (Có Chuông & Rung)</span>
+        </button>
+        <button class="btn btn-accent" onclick="requestSystemNotification()">
+          <span>📱 Đẩy Ra Thông Báo Thật Trực Tiếp Trên iPhone</span>
+        </button>
+        <button class="btn btn-secondary" onclick="exportBannerImage()">
+          <span>📸 Tải Ảnh Banner Thông Báo (PNG Sắc Nét)</span>
+        </button>
+        <button class="btn btn-secondary" onclick="openIpaGuide()">
+          <span>📦 Hướng Dẫn Cài Lên iPhone & Xuất File IPA</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Hướng Dẫn IPA & PWA -->
+  <div class="modal-overlay" id="guideModal">
+    <div class="modal-card">
+      <div class="modal-title">
+        <span>📲 Cách Cài Đặt Lên iPhone (iOS)</span>
+      </div>
+      
+      <p style="font-size: 13px; color: #ff9500; margin-bottom: 14px; font-weight: 500;">
+        ⚠️ Lưu ý quan trọng về hệ điều hành iOS: Apple không cho cài file IPA bằng cách nhấn mở trực tiếp như file APK của Android. Dưới đây là 2 cách tối ưu nhất:
+      </p>
+
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div>
+          <strong>Cách 1: Cài trực tiếp từ Safari trong 5 giây (PWA - Khuyên dùng):</strong><br>
+          Mở trang web này trong trình duyệt <strong>Safari trên iPhone</strong> -> Bấm nút <strong>Chia sẻ (Share ⬆️)</strong> -> Chọn <strong>"Thêm vào Màn hình chính" (Add to Home Screen)</strong>. Ứng dụng sẽ có icon riêng ngoài màn hình, chạy toàn màn hình và gửi thông báo y hệt app gốc!
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div>
+          <strong>Cách 2: Cài bằng File IPA (Sideloading):</strong><br>
+          Cần dùng công cụ ký chứng chỉ miễn phí như <strong>Sideloadly</strong>, <strong>AltStore</strong> hoặc <strong>TrollStore</strong> trên máy tính kết nối cáp với iPhone để nạp file <code>.ipa</code> vào máy.
+        </div>
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div>
+          <strong>Cách 3: Tự động Build IPA qua GitHub Actions:</strong><br>
+          Chúng tôi đã tạo sẵn mã nguồn Swift hoàn chỉnh và file CI/CD <code>build-ipa.yml</code>. Bạn chỉ cần đẩy lên GitHub là máy chủ macOS của GitHub sẽ tự xuất file <code>.ipa</code> thật cho bạn tải về!
+        </div>
+      </div>
+
+      <button class="close-btn" onclick="closeIpaGuide()">Đã Hiểu & Đóng</button>
+    </div>
+  </div>
+
+  <!-- Hidden Canvas for Exporting High-Resolution Image -->
+  <canvas id="exportCanvas" style="display:none;"></canvas>
+
+  <script>
+    // Elements
+    const inputAppName = document.getElementById('inputAppName');
+    const inputTime = document.getElementById('inputTime');
+    const inputBadge = document.getElementById('inputBadge');
+    const inputBody = document.getElementById('inputBody');
+    const inputIconFile = document.getElementById('inputIconFile');
+
+    const previewAppName = document.getElementById('previewAppName');
+    const previewTime = document.getElementById('previewTime');
+    const previewBadge = document.getElementById('previewBadge');
+    const previewBody = document.getElementById('previewBody');
+    const previewIcon = document.getElementById('previewIcon');
+    const bannerCard = document.getElementById('bannerCard');
+    const toast = document.getElementById('toast');
+    const guideModal = document.getElementById('guideModal');
+
+    // Live update listeners
+    inputAppName.addEventListener('input', () => previewAppName.textContent = inputAppName.value || 'Investing.com');
+    inputTime.addEventListener('input', () => previewTime.textContent = inputTime.value || '09:00');
+    inputBadge.addEventListener('input', () => {
+      const val = inputBadge.value.trim();
+      if (!val || val === '0') {
+        previewBadge.style.display = 'none';
+      } else {
+        previewBadge.style.display = 'flex';
+        previewBadge.textContent = val;
+      }
+    });
+    inputBody.addEventListener('input', () => previewBody.textContent = inputBody.value);
+
+    // Custom Icon Upload
+    inputIconFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          previewIcon.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Realistic Web Audio API iOS Chime (Tri-Tone)
+    function playIosSound() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+
+        const notes = [
+          { freq: 880, start: 0, dur: 0.12 },       // A5
+          { freq: 1174.66, start: 0.12, dur: 0.14 }, // D6
+          { freq: 1760, start: 0.26, dur: 0.35 }     // A6
+        ];
+
+        notes.forEach(n => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(n.freq, ctx.currentTime + n.start);
+
+          gain.gain.setValueAtTime(0, ctx.currentTime + n.start);
+          gain.gain.linearRampToValueAtTime(0.28, ctx.currentTime + n.start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + n.start + n.dur);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.start(ctx.currentTime + n.start);
+          osc.stop(ctx.currentTime + n.start + n.dur);
+        });
+
+        // Trigger vibration if mobile browser supports it
+        if (navigator.vibrate) {
+          navigator.vibrate([40, 60, 40]);
+        }
+      } catch (err) {
+        console.warn("Audio context not allowed or supported yet:", err);
+      }
+    }
+
+    // Play Notification Animation
+    function playNotificationAnimation() {
+      playIosSound();
+      bannerCard.classList.remove('notification-animate-in');
+      void bannerCard.offsetWidth; // trigger reflow
+      bannerCard.classList.add('notification-animate-in');
+      showToast("Đã kích hoạt thông báo thành công! 🔔");
+    }
+
+    function triggerNotificationEffect() {
+      playIosSound();
+      bannerCard.style.transform = 'scale(0.96)';
+      setTimeout(() => {
+        bannerCard.style.transform = '';
+      }, 150);
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // Native Push Notification via Web Notification API
+    function requestSystemNotification() {
+      if (!("Notification" in window)) {
+        alert("Trình duyệt này không hỗ trợ Web Notification API. Hãy thử mở trên Safari iOS 16.4+ (thêm vào màn hình chính) hoặc Chrome.");
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        sendRealNotification();
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            sendRealNotification();
+          } else {
+            showToast("Bạn đã từ chối quyền thông báo.");
+          }
+        });
+      } else {
+        alert("Quyền thông báo đang bị chặn trong Cài đặt trình duyệt của bạn. Hãy bật lại để nhận thông báo!");
+      }
+    }
+
+    function sendRealNotification() {
+      playIosSound();
+      const notif = new Notification(inputAppName.value || "Investing.com", {
+        body: inputBody.value,
+        icon: "investing_icon.jpg",
+        badge: "investing_icon.jpg"
+      });
+      notif.onclick = () => {
+        window.focus();
+      };
+      showToast("Đã gửi thông báo hệ thống tới thiết bị! 📲");
+    }
+
+    // Export High-Res PNG of Banner
+    function exportBannerImage() {
+      const canvas = document.getElementById('exportCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const width = 800;
+      const height = 240;
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw dark background & glow
+      ctx.fillStyle = '#05070c';
+      ctx.fillRect(0, 0, width, height);
+
+      // Card dimensions
+      const cardX = 30;
+      const cardY = 30;
+      const cardW = width - 60;
+      const cardH = height - 60;
+      const radius = 28;
+
+      // Draw rounded card
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(cardX, cardY, cardW, cardH, radius);
+      ctx.fillStyle = 'rgba(28, 28, 30, 0.94)';
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+      ctx.stroke();
+      ctx.restore();
+
+      // Draw Icon
+      const img = new Image();
+      img.src = previewIcon.src;
+      img.onload = () => {
+        const iconSize = 74;
+        const iconX = cardX + 22;
+        const iconY = cardY + 22;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(iconX, iconY, iconSize, iconSize, 18);
+        ctx.clip();
+        ctx.drawImage(img, iconX, iconY, iconSize, iconSize);
+        ctx.restore();
+
+        // Draw Badge
+        const badgeVal = inputBadge.value.trim();
+        if (badgeVal && badgeVal !== '0') {
+          const badgeX = iconX + iconSize - 10;
+          const badgeY = iconY - 4;
+          const badgeR = 17;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(45, 45, 48, 0.95)';
+          ctx.fill();
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.stroke();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 18px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(badgeVal, badgeX, badgeY + 1);
+          ctx.restore();
+        }
+
+        // Draw Text Header
+        const textStartX = iconX + iconSize + 22;
+        const headerY = iconY + 22;
+
+        ctx.font = 'bold 22px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText(inputAppName.value || 'Investing.com', textStartX, headerY);
+
+        ctx.font = '19px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.textAlign = 'right';
+        ctx.fillText(inputTime.value || '09:00', cardX + cardW - 25, headerY);
+
+        // Draw Body Text (Multi-line wrap)
+        ctx.font = '20px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+        ctx.textAlign = 'left';
+
+        const maxWidth = cardW - iconSize - 75;
+        const lineHeight = 28;
+        const bodyY = headerY + 36;
+        wrapText(ctx, inputBody.value, textStartX, bodyY, maxWidth, lineHeight);
+
+        // Download PNG
+        const link = document.createElement('a');
+        link.download = `ios_notification_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast("Đã tải xuống ảnh thông báo PNG! 📸");
+      };
+    }
+
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+      const words = text.split(' ');
+      let line = '';
+      let currentY = y;
+
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = context.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          context.fillText(line, x, currentY);
+          line = words[n] + ' ';
+          currentY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      context.fillText(line, x, currentY);
+    }
+
+    // Modal controls
+    function openIpaGuide() {
+      guideModal.classList.add('active');
+    }
+
+    function closeIpaGuide() {
+      guideModal.classList.remove('active');
+    }
+
+    // Auto-update clock every minute
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('screenClock').textContent = `${hours}:${minutes}`;
+
+      const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+      const dayName = days[now.getDay()];
+      const date = now.getDate();
+      const month = now.getMonth() + 1;
+      document.getElementById('screenDate').textContent = `${dayName}, ${date} tháng ${month}`;
+    }
+    updateClock();
+    setInterval(updateClock, 30000);
+  </script>
+</body>
+</html>

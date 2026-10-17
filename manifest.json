@@ -1,0 +1,21 @@
+{
+  "name": "Investing.com iOS Notification",
+  "short_name": "Investing",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#05070c",
+  "theme_color": "#05070c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "investing_icon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "investing_icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
