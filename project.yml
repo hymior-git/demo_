@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: com.investing
   deploymentTarget:
     iOS: "16.0"
+  createSharedSchemes: true
 targets:
   NotificationApp:
     type: application

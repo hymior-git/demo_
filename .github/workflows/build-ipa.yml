@@ -18,14 +18,11 @@ jobs:
       - name: Generate Xcode Project
         run: xcodegen generate
 
-      - name: List Schemes
-        run: xcodebuild -list
-
       - name: Build App with Xcode
         run: |
           xcodebuild clean build \
             -project NotificationApp.xcodeproj \
-            -scheme NotificationApp \
+            -target NotificationApp \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
@@ -33,19 +30,15 @@ jobs:
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES 2>&1 | tee xcodebuild.log
-
-      - name: Upload Build Log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: xcodebuild-log
-          path: xcodebuild.log
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
 
       - name: Package Payload to IPA
         run: |
+          APP_PATH=$(find ./DerivedData -name "NotificationApp.app" -type d | head -n 1)
+          echo "Found app at: $APP_PATH"
           mkdir -p Payload
-          cp -r ./DerivedData/Build/Products/Release-iphoneos/NotificationApp.app Payload/
+          cp -r "$APP_PATH" Payload/
+          cp investing_icon.jpg Payload/NotificationApp.app/AppIcon.png || true
           zip -r NotificationApp.ipa Payload
           rm -rf Payload
 
