@@ -25,7 +25,7 @@ jobs:
           set +e
           xcodebuild clean build \
             -project NotificationApp.xcodeproj \
-            -target NotificationApp \
+            -scheme NotificationApp \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
@@ -37,7 +37,6 @@ jobs:
           BUILD_STATUS=$?
           echo "=== XCODEBUILD EXIT CODE: $BUILD_STATUS ==="
           
-          # Push build.log to debug-log branch so we can read it directly
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git checkout -B debug-log
