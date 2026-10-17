@@ -36,9 +36,16 @@ jobs:
           echo "=== XCODEBUILD EXIT CODE: $BUILD_STATUS ==="
           if [ $BUILD_STATUS -ne 0 ]; then
             echo "=== BUILD ERRORS FOUND ==="
-            grep -E "error:|fatal error:|BUILD FAILED" build.log -B 2 -A 5 || tail -n 80 build.log
+            tail -n 100 build.log
             exit 1
           fi
+
+      - name: Upload Build Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Package Payload to IPA
         run: |
