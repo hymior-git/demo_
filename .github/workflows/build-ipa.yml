@@ -8,6 +8,8 @@ on:
 jobs:
   build-ios:
     runs-on: macos-14
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -34,18 +36,19 @@ jobs:
             AD_HOC_CODE_SIGNING_ALLOWED=YES > build.log 2>&1
           BUILD_STATUS=$?
           echo "=== XCODEBUILD EXIT CODE: $BUILD_STATUS ==="
+          
+          # Push build.log to debug-log branch so we can read it directly
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git checkout -B debug-log
+          git add build.log -f
+          git commit -m "Debug build log" || true
+          git push origin debug-log --force || true
+
           if [ $BUILD_STATUS -ne 0 ]; then
-            echo "=== BUILD ERRORS FOUND ==="
-            tail -n 100 build.log
+            echo "=== BUILD FAILED ==="
             exit 1
           fi
-
-      - name: Upload Build Log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build.log
 
       - name: Package Payload to IPA
         run: |
